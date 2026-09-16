@@ -72,4 +72,35 @@ class Photo extends Model
             ':userId' => $userId
         ]);
     }
+
+    /**
+     * Counts how many photos have been uploaded in total. Used for homepage stats.
+     * @return int
+     */
+    public function countAll()
+    {
+        $countQuery = "SELECT COUNT(*) AS totalCount FROM photos";
+        $stmtHandle = $this->databaseHandle->prepare($countQuery);
+        $stmtHandle->execute();
+        return (int) $stmtHandle->fetch(PDO::FETCH_ASSOC)["totalCount"];
+    }
+
+    /**
+     * Fetches the most recently uploaded photos, limited to a small preview count.
+     * Used on the homepage to showcase recent activity.
+     * @param int $limitCount
+     * @return array
+     */
+    public function getRecent($limitCount = 6)
+    {
+        $limitCount = (int) $limitCount;
+        $fetchQuery = "SELECT photos.*, users.first_name, users.last_name
+                       FROM photos
+                       JOIN users ON photos.user_id = users.id
+                       ORDER BY photos.date_time DESC
+                       LIMIT {$limitCount}";
+        $stmtHandle = $this->databaseHandle->prepare($fetchQuery);
+        $stmtHandle->execute();
+        return $stmtHandle->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

@@ -52,4 +52,16 @@ class User extends Model
         $stmtHandle->execute([":id" => $lookupId]);
         return $stmtHandle->fetch(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Counts how many registered users exist. Used for homepage stats.
+     * @return int
+     */
+    public function countAll()
+    {
+        $countQuery = "SELECT COUNT(*) AS totalCount FROM users";
+        $stmtHandle = $this->databaseHandle->prepare($countQuery);
+        $stmtHandle->execute();
+        return (int) $stmtHandle->fetch(PDO::FETCH_ASSOC)["totalCount"];
+    }
 }
