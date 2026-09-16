@@ -1,0 +1,60 @@
+/**
+ * Custom responsive tweaks for Alzikrayat, on top of Bootstrap's grid.
+ * Bootstrap covers the base breakpoints; these media queries fine-tune
+ * spacing, gallery thumbnail heights (grid mode only), and orientation-
+ * specific layout so the app stays comfortable across phones (portrait/
+ * landscape), tablets, and desktop. List-mode thumbnails keep their own
+ * fixed small size (see views/photos/index.php) and are intentionally
+ * excluded from these rules.
+ */
+
+/* Mobile phones, portrait orientation (default / smallest screens) */
+@media (max-width: 575.98px) {
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+
+    #galleryContainer:not(.list-mode) .gallery-thumb {
+        height: 160px;
+    }
+
+    .display-5 {
+        font-size: 1.75rem;
+    }
+}
+
+/* Mobile phones, landscape orientation: shorter viewport height, wider width */
+@media (max-width: 767.98px) and (orientation: landscape) {
+    .p-5.bg-dark {
+        padding: 1.5rem !important;
+    }
+
+    #galleryContainer:not(.list-mode) .gallery-thumb {
+        height: 140px;
+    }
+}
+
+/* Tablets, portrait and landscape */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    #galleryContainer:not(.list-mode) .gallery-thumb {
+        height: 190px;
+    }
+}
+
+/* Small desktop / large tablet landscape */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    #galleryContainer:not(.list-mode) .gallery-thumb {
+        height: 210px;
+    }
+}
+
+/* Large desktop screens */
+@media (min-width: 1200px) {
+    #galleryContainer:not(.list-mode) .gallery-thumb {
+        height: 240px;
+    }
+
+    .container {
+        max-width: 1140px;
+    }
+}
