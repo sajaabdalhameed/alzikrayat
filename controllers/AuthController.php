@@ -30,8 +30,24 @@ class AuthController extends Controller
             return;
         }
 
+        // Names must be letters only, max 50 characters (matches the Users table constraint).
+        $namePattern = '/^[A-Za-z]{1,50}$/';
+        if (
+            !preg_match($namePattern, $submittedFields["first_name"]) ||
+            !preg_match($namePattern, $submittedFields["last_name"])
+        ) {
+            $this->render("auth/register", ["failureNotice" => "Names must contain letters only (max 50 characters)."]);
+            return;
+        }
+
         if (!filter_var($submittedFields["email"], FILTER_VALIDATE_EMAIL)) {
             $this->render("auth/register", ["failureNotice" => "Invalid email format."]);
+            return;
+        }
+
+        // Server-side password strength check (mirrors the client-side minlength=6).
+        if (strlen($submittedFields["password"]) < 6) {
+            $this->render("auth/register", ["failureNotice" => "Password must be at least 6 characters long."]);
             return;
         }
 

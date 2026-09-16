@@ -1,125 +1,264 @@
 <?php
 /**
  * PhotoController
- * Handles displaying the photo gallery, showing a single photo with comments,
- * uploading new photos, and deleting photos (with ownership validation).
+ * Handles viewing photos, uploading new photos, applies custom image filters,
+ * and deleting photo records.
  */
 class PhotoController extends Controller
 {
     /**
-     * Displays the gallery of all uploaded photos.
+     * Displays all photos in the gallery.
      */
     public function index()
     {
-        $albumModel = new Photo();
-        $fullCollection = $albumModel->getAll();
-        $this->render("photos/index", ["fullCollection" => $fullCollection]);
+        $photoModel = new Photo();
+        $photosList = $photoModel->getAll();
+        $this->render("photos/index", ["photosList" => $photosList]);
     }
 
     /**
-     * Displays a single photo in detail along with its comments.
-     * @param int $requestedId
-     */
-    public function show($requestedId)
-    {
-        $albumModel = new Photo();
-        $matchedPhoto = $albumModel->findById($requestedId);
-
-        if (!$matchedPhoto) {
-            http_response_code(404);
-            echo "Photo not found.";
-            return;
-        }
-
-        $discussionModel = new Comment();
-        $attachedComments = $discussionModel->getByPhotoId($requestedId);
-
-        $this->render("photos/show", [
-            "matchedPhoto" => $matchedPhoto,
-            "attachedComments" => $attachedComments
-        ]);
-    }
-
-    /**
-     * Displays the photo upload form. Requires an active session.
+     * Renders the photo upload form page.
      */
     public function showUploadForm()
     {
         if (!isset($_SESSION["user_id"])) {
             $this->redirectTo("/alzikrayat/public/login");
-            return;
         }
         $this->render("photos/create");
     }
 
     /**
-     * Validates and stores an uploaded photo file plus its metadata.
-     * Requires an active session.
+     * Renders the photo detail view along with comments.
+     */
+    public function show($photoId)
+    {
+        $photoModel = new Photo();
+        $matchedPhoto = $photoModel->findById($photoId);
+
+        if (!$matchedPhoto) {
+            $this->redirectTo("/alzikrayat/public/photos");
+        }
+
+        $commentModel = new Comment();
+        $attachedComments = $commentModel->getByPhotoId($photoId);
+
+        $filePath = __DIR__ . "/../public/images/uploads/" . $matchedPhoto["file_name"];
+        $hasOriginalBackup = file_exists($this->getOriginalBackupPath($filePath));
+
+        $this->render("photos/show", [
+            "matchedPhoto" => $matchedPhoto,
+            "attachedComments" => $attachedComments,
+            "hasOriginalBackup" => $hasOriginalBackup
+        ]);
+    }
+
+    /**
+     * Processes photo upload and saves metadata.
      */
     public function store()
     {
         if (!isset($_SESSION["user_id"])) {
             $this->redirectTo("/alzikrayat/public/login");
+        }
+
+        $photoTitle = trim($_POST["title"] ?? "");
+        $photoDescription = trim($_POST["description"] ?? "");
+        $uploadedFile = $_FILES["photo_file"] ?? null;
+
+        if (empty($photoTitle) || !$uploadedFile || $uploadedFile["error"] !== UPLOAD_ERR_OK) {
+            $this->render("photos/create", ["failureNotice" => "Please select a valid image file and provide a title."]);
             return;
         }
 
-        if (empty($_POST["title"]) || empty($_FILES["photo_file"]["name"])) {
-            $this->render("photos/create", ["failureNotice" => "Title and photo file are required."]);
+        $rawExtension = pathinfo($uploadedFile["name"], PATHINFO_EXTENSION);
+        $extension = strtolower($rawExtension);
+        $supportedFormats = ["jpg", "jpeg", "png", "gif"];
+
+        if (!in_array($extension, $supportedFormats)) {
+            $this->render("photos/create", ["failureNotice" => "Only JPG, PNG and GIF images are allowed."]);
             return;
         }
 
-        $permittedTypes = ["jpg", "jpeg", "png", "gif"];
-        $rawFileName = $_FILES["photo_file"]["name"];
-        $detectedExtension = strtolower(pathinfo($rawFileName, PATHINFO_EXTENSION));
+        $uniqueFileName = "photo_" . time() . "_" . uniqid() . "." . $extension;
+        $uploadsDirectory = __DIR__ . "/../public/images/uploads/";
 
-        if (!in_array($detectedExtension, $permittedTypes)) {
-            $this->render("photos/create", ["failureNotice" => "Only image files are allowed."]);
-            return;
+        if (!is_dir($uploadsDirectory)) {
+            mkdir($uploadsDirectory, 0777, true);
         }
 
-        $uniqueFileName = "photo_" . time() . "_" . uniqid() . "." . $detectedExtension;
-        $savePath = __DIR__ . "/../public/images/uploads/" . $uniqueFileName;
+        $destinationPath = $uploadsDirectory . $uniqueFileName;
 
-        if (!move_uploaded_file($_FILES["photo_file"]["tmp_name"], $savePath)) {
-            $this->render("photos/create", ["failureNotice" => "Failed to save the uploaded file."]);
-            return;
+        if (move_uploaded_file($uploadedFile["tmp_name"], $destinationPath)) {
+            $photoModel = new Photo();
+            $photoModel->create([
+                "user_id" => $_SESSION["user_id"],
+                "file_name" => $uniqueFileName,
+                "title" => $photoTitle,
+                "description" => $photoDescription
+            ]);
+
+            $this->redirectTo("/alzikrayat/public/photos");
+        } else {
+            $this->render("photos/create", ["failureNotice" => "Failed to save the image file."]);
+        }
+    }
+
+    /**
+     * Deletes a photo if it belongs to the active session user.
+     */
+    public function delete($photoId)
+    {
+        if (!isset($_SESSION["user_id"])) {
+            $this->redirectTo("/alzikrayat/public/login");
         }
 
-        $albumModel = new Photo();
-        $albumModel->create([
-            "user_id" => $_SESSION["user_id"],
-            "file_name" => $uniqueFileName,
-            "title" => $_POST["title"],
-            "description" => $_POST["description"] ?? ""
-        ]);
+        $photoModel = new Photo();
+        $matchedPhoto = $photoModel->findById($photoId);
+
+        if ($matchedPhoto && $matchedPhoto["user_id"] == $_SESSION["user_id"]) {
+            $filePath = __DIR__ . "/../public/images/uploads/" . $matchedPhoto["file_name"];
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            // Clean up the original backup too, if a filter was ever applied.
+            $backupPath = $this->getOriginalBackupPath($filePath);
+            if (file_exists($backupPath)) {
+                unlink($backupPath);
+            }
+
+            $photoModel->deleteIfOwner($photoId, $_SESSION["user_id"]);
+        }
 
         $this->redirectTo("/alzikrayat/public/photos");
     }
 
     /**
-     * Deletes a photo after verifying the current session user owns it,
-     * then removes the physical file from disk.
-     * @param int $requestedId
+     * Applies grayscale or sepia filter to the photo. Before filtering for the
+     * first time, a backup of the untouched original is saved so it can be
+     * restored later via restoreOriginal().
      */
-    public function delete($requestedId)
+    public function applyFilter($photoId, $filterType)
     {
         if (!isset($_SESSION["user_id"])) {
             $this->redirectTo("/alzikrayat/public/login");
+        }
+
+        $photoModel = new Photo();
+        $matchedPhoto = $photoModel->findById($photoId);
+
+        if (!$matchedPhoto || $matchedPhoto["user_id"] != $_SESSION["user_id"]) {
+            $this->redirectTo("/alzikrayat/public/photos");
+        }
+
+        $filePath = __DIR__ . "/../public/images/uploads/" . $matchedPhoto["file_name"];
+        $backupPath = $this->getOriginalBackupPath($filePath);
+
+        // Save an untouched backup the first time a filter is ever applied.
+        if (!file_exists($backupPath) && file_exists($filePath)) {
+            copy($filePath, $backupPath);
+        }
+
+        $this->applyImageFilter($filePath, $filterType);
+
+        $this->redirectTo("/alzikrayat/public/photo/" . $photoId);
+    }
+
+    /**
+     * Restores the original, unfiltered image from its backup copy,
+     * overwriting the current (filtered) file. Only the owner may restore.
+     */
+    public function restoreOriginal($photoId)
+    {
+        if (!isset($_SESSION["user_id"])) {
+            $this->redirectTo("/alzikrayat/public/login");
+        }
+
+        $photoModel = new Photo();
+        $matchedPhoto = $photoModel->findById($photoId);
+
+        if (!$matchedPhoto || $matchedPhoto["user_id"] != $_SESSION["user_id"]) {
+            $this->redirectTo("/alzikrayat/public/photos");
+        }
+
+        $filePath = __DIR__ . "/../public/images/uploads/" . $matchedPhoto["file_name"];
+        $backupPath = $this->getOriginalBackupPath($filePath);
+
+        if (file_exists($backupPath)) {
+            copy($backupPath, $filePath);
+        }
+
+        $this->redirectTo("/alzikrayat/public/photo/" . $photoId);
+    }
+
+    /**
+     * Builds the path used to store/read the untouched original backup for a
+     * given uploaded file, e.g. "photo_123.jpg" -> "photo_123_original.jpg".
+     * @param string $filePath Absolute path to the main (working) image file
+     * @return string
+     */
+    private function getOriginalBackupPath($filePath)
+    {
+        $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+        $nameWithoutExtension = pathinfo($filePath, PATHINFO_FILENAME);
+        $directory = pathinfo($filePath, PATHINFO_DIRNAME);
+        return $directory . "/" . $nameWithoutExtension . "_original." . $extension;
+    }
+
+    /**
+     * Custom GD image filter processor.
+     */
+    private function applyImageFilter($filePath, $filterType)
+    {
+        if (!extension_loaded("gd") || !file_exists($filePath)) {
             return;
         }
 
-        $albumModel = new Photo();
-        $ownedPhoto = $albumModel->findById($requestedId);
+        // Convert file extension to lowercase to handle uppercase extensions (.JPG, .PNG)
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
 
-        if ($ownedPhoto && $ownedPhoto["user_id"] == $_SESSION["user_id"]) {
-            $albumModel->deleteIfOwner($requestedId, $_SESSION["user_id"]);
-
-            $storedFilePath = __DIR__ . "/../public/images/uploads/" . $ownedPhoto["file_name"];
-            if (file_exists($storedFilePath)) {
-                unlink($storedFilePath);
-            }
+        switch ($extension) {
+            case "jpg":
+            case "jpeg":
+                $imageResource = @imagecreatefromjpeg($filePath);
+                break;
+            case "png":
+                $imageResource = @imagecreatefrompng($filePath);
+                break;
+            case "gif":
+                $imageResource = @imagecreatefromgif($filePath);
+                break;
+            default:
+                return;
         }
 
-        $this->redirectTo("/alzikrayat/public/photos");
+        if (!$imageResource) {
+            return;
+        }
+
+        // Apply grayscale transformation
+        imagefilter($imageResource, IMG_FILTER_GRAYSCALE);
+
+        // Apply sepia color tint if selected
+        if ($filterType === "sepia") {
+            imagefilter($imageResource, IMG_FILTER_COLORIZE, 90, 60, 30);
+        }
+
+        // Save the filtered image back to storage
+        switch ($extension) {
+            case "jpg":
+            case "jpeg":
+                imagejpeg($imageResource, $filePath, 90);
+                break;
+            case "png":
+                imagepng($imageResource, $filePath);
+                break;
+            case "gif":
+                imagegif($imageResource, $filePath);
+                break;
+        }
+
+        // Free system memory resources
+        imagedestroy($imageResource);
     }
 }
