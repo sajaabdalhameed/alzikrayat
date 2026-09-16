@@ -10,14 +10,14 @@
                     <div class="alert alert-danger"><?= htmlspecialchars($failureNotice) ?></div>
                 <?php endif; ?>
 
-                <form method="POST" action="/alzikrayat/public/register" novalidate>
+                <form method="POST" action="/alzikrayat/public/register">
                     <div class="mb-3">
                         <label class="form-label">First Name</label>
-                        <input type="text" name="first_name" class="form-control" required pattern="[A-Za-z]+">
+                        <input type="text" name="first_name" class="form-control" required pattern="[A-Za-z]{1,50}" maxlength="50">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Last Name</label>
-                        <input type="text" name="last_name" class="form-control" required pattern="[A-Za-z]+">
+                        <input type="text" name="last_name" class="form-control" required pattern="[A-Za-z]{1,50}" maxlength="50">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email</label>

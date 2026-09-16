@@ -9,28 +9,22 @@
 </div>
 
 <div class="row" id="galleryContainer">
-    <?php if (empty($fullCollection)): ?>
+    <?php if (empty($photosList)): ?>
         <p class="text-muted">No photos uploaded yet.</p>
     <?php else: ?>
-        <?php foreach ($fullCollection as $photoRow): ?>
+        <?php foreach ($photosList as $photoRow): ?>
             <div class="gallery-item col-md-4 mb-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="row g-0 h-100 align-items-center">
-                        <div class="card-img-wrapper col-12">
-                            <img src="/alzikrayat/public/images/uploads/<?= htmlspecialchars($photoRow["file_name"]) ?>"
-                                 class="card-img-top w-100" style="height: 220px; object-fit: cover;" alt="photo">
-                        </div>
-                        <div class="card-body-wrapper col-12">
-                            <div class="card-body">
-                                <h5 class="card-title"><?= htmlspecialchars($photoRow["title"]) ?></h5>
-                                <p class="card-text text-muted mb-2">
-                                    By <?= htmlspecialchars($photoRow["first_name"] . " " . $photoRow["last_name"]) ?>
-                                </p>
-                                <a href="/alzikrayat/public/photo/<?= $photoRow["id"] ?>" class="btn btn-outline-primary btn-sm">
-                                    View Details
-                                </a>
-                            </div>
-                        </div>
+                <div class="card h-100 gallery-card">
+                    <img src="/alzikrayat/public/images/uploads/<?= htmlspecialchars($photoRow["file_name"]) ?>"
+                         class="gallery-thumb" alt="photo">
+                    <div class="card-body">
+                        <h5 class="card-title"><?= htmlspecialchars($photoRow["title"]) ?></h5>
+                        <p class="card-text text-muted mb-1">
+                            By <?= htmlspecialchars($photoRow["first_name"] . " " . $photoRow["last_name"]) ?>
+                        </p>
+                        <a href="/alzikrayat/public/photo/<?= $photoRow["id"] ?>" class="btn btn-outline-primary btn-sm">
+                            View Details
+                        </a>
                     </div>
                 </div>
             </div>
@@ -38,26 +32,43 @@
     <?php endif; ?>
 </div>
 
+<style>
+    /* Grid mode (default): a normal card thumbnail on top of the text. */
+    .gallery-thumb {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+    }
+
+    /* List mode: a small fixed-size thumbnail sitting beside the text. */
+    #galleryContainer.list-mode .gallery-item {
+        width: 100%;
+    }
+
+    #galleryContainer.list-mode .gallery-card {
+        flex-direction: row;
+        align-items: stretch;
+    }
+
+    #galleryContainer.list-mode .gallery-thumb {
+        width: 160px;
+        min-width: 160px;
+        height: 120px;
+    }
+</style>
+
 <script>
 function toggleView(style) {
+    const container = document.getElementById('galleryContainer');
     const items = document.querySelectorAll('.gallery-item');
-    items.forEach(item => {
-        const imgWrapper = item.querySelector('.card-img-wrapper');
-        const bodyWrapper = item.querySelector('.card-body-wrapper');
-        const img = item.querySelector('img');
 
-        if (style === 'list') {
-            item.className = 'gallery-item col-12 mb-3';
-            imgWrapper.className = 'card-img-wrapper col-md-3';
-            bodyWrapper.className = 'card-body-wrapper col-md-9';
-            img.style.height = '140px';
-        } else {
-            item.className = 'gallery-item col-md-4 mb-4';
-            imgWrapper.className = 'card-img-wrapper col-12';
-            bodyWrapper.className = 'card-body-wrapper col-12';
-            img.style.height = '220px';
-        }
-    });
+    if (style === 'list') {
+        container.classList.add('list-mode');
+        items.forEach(item => { item.className = 'gallery-item col-12 mb-3'; });
+    } else {
+        container.classList.remove('list-mode');
+        items.forEach(item => { item.className = 'gallery-item col-md-4 mb-4'; });
+    }
 }
 </script>
 

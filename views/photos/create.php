@@ -10,7 +10,7 @@
                     <div class="alert alert-danger"><?= htmlspecialchars($failureNotice) ?></div>
                 <?php endif; ?>
 
-                <form method="POST" action="/alzikrayat/public/photo/store" enctype="multipart/form-data" novalidate>
+                <form method="POST" action="/alzikrayat/public/photo/store" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label class="form-label">Title</label>
                         <input type="text" name="title" class="form-control" required maxlength="200">

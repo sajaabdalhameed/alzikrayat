@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alzikrayat</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/alzikrayat/public/css/style.css" rel="stylesheet">
     <script src="/alzikrayat/public/js/main.js" defer></script>
 </head>
 <body>
@@ -14,6 +15,9 @@
         <a class="navbar-brand" href="/alzikrayat/public/">Alzikrayat</a>
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/alzikrayat/public/">Home</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/alzikrayat/public/photos">Gallery</a>
                 </li>

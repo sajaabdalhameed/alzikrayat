@@ -17,7 +17,7 @@
                     </div>
                 <?php endif; ?>
 
-                <form method="POST" action="/alzikrayat/public/login" novalidate>
+                <form method="POST" action="/alzikrayat/public/login">
                     <div class="mb-3">
                         <label class="form-label">Email</label>
                         <input type="email" name="email" class="form-control" required>
