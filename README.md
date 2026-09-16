@@ -1,15 +1,13 @@
 Name : Saja abdalhameed , Information technology
 # Alzikrayat | Memories Platform
 
-> **A custom-built, lightweight photo-sharing web application engineered with pure PHP, raw MVC pattern, and zero external backend frameworks.**
+ **A custom-built, lightweight photo-sharing web application engineered with pure PHP, raw MVC pattern, and zero external backend frameworks.**
 
----
 
 ## Overview
 
 **Alzikrayat** is a web platform designed to capture and preserve personal moments. Built from the ground up to demonstrate pure software engineering principles, it features a bespoke Regex routing engine, robust security mechanisms, and a responsive multi-view gallery interface.
 
----
 
 ## Key Capabilities
 
@@ -35,7 +33,6 @@ Name : Saja abdalhameed , Information technology
 * **Triple-Layer Validation**
   * Multi-tier data integrity checks applied across HTML5, Client-side JavaScript, and Server-side PHP.
 
----
 
 ## Architectural Blueprint (MVC)
 
@@ -53,8 +50,6 @@ alzikrayat/
 └── public/                # Web Root (index.php, CSS/JS assets, Uploads)
 ```
 
----
-
 ## Quick Start & Deployment
 
 ### Prerequisites
@@ -71,7 +66,6 @@ alzikrayat/
    * Access the application via browser at:
      `http://localhost/alzikrayat/public/`
 
----
 
 ## Built With
 
@@ -79,7 +73,3 @@ alzikrayat/
 * **Database:** MySQL via PDO (Prepared Statements)
 * **Frontend:** HTML5, Modern CSS3, JavaScript (ES6), Bootstrap 5
 * **Architecture:** MVC Architecture + Singleton Pattern + Custom Regex Router
-
----
-
-Crafted for SUST Advanced Web Technologies
